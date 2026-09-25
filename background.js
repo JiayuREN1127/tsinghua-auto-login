@@ -8,8 +8,12 @@
 // 所以每个注入函数必须完全自包含，不得引用文件顶层变量/函数。
 
 const LOGIN_HOST = "id.tsinghua.edu.cn";
-const MAIL_HOST = "mail.tsinghua.edu.cn";
 const COOLDOWN_MS = 60000;
+
+// Coremail 分片域名：mail/mails/mails2/mails3... 统一按邮件系统处理
+function isMailHost(hostname) {
+  return /^mails?\d*\.tsinghua\.edu\.cn$/.test(hostname);
+}
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url && isTsinghua(tab.url)) {
@@ -64,7 +68,7 @@ async function autoHandle(tabId, url) {
         args: [{ username: cfg.username, password: cfg.password }],
         world: "MAIN",
       });
-    } else if (new URL(url).hostname === MAIL_HOST) {
+    } else if (isMailHost(new URL(url).hostname)) {
       await chrome.scripting.executeScript({
         target: { tabId },
         func: AUTO_LOGIN_MAIL,
