@@ -1,8 +1,11 @@
 // 清华自动登录 - 后台脚本
-// 支持三类站点:
-//  1. id.tsinghua.edu.cn  统一认证登录页 (全自动)
-//  2. mail.tsinghua.edu.cn  Coremail 邮件系统 (填表 + 点击原生登录)
-//  3. 其他 *.tsinghua.edu.cn  检测到跳转统一认证的登录入口时自动点击
+// 支持三类站点，凭据按站点分开放置:
+//  1. id.tsinghua.edu.cn  统一认证登录页 (cas 凭据)
+//  2. mail*.tsinghua.edu.cn  Coremail 邮件系统 (mail 凭据)
+//  3. 其他 *.tsinghua.edu.cn  检测到跳转统一认证的登录入口时自动点击 (cas 凭据)
+//
+// 存储结构:
+//   { cas: {username, password}, mail: {username, password}, autoMode: true }
 //
 // 注意: chrome.scripting.executeScript 只序列化 func 本身，
 // 所以每个注入函数必须完全自包含，不得引用文件顶层变量/函数。
@@ -48,12 +51,20 @@ function isLoginPage(url) {
 
 async function autoHandle(tabId, url) {
   if (url.startsWith("chrome://")) return;
-  const cfg = await chrome.storage.local.get(["username", "password", "autoMode"]);
+  const cfg = await chrome.storage.local.get(null);
+
+  const site =
+    isLoginPage(url) || (!isMailHost(new URL(url).hostname) && isTsinghua(url))
+      ? "cas"
+      : "mail";
+  const cred = (cfg[site] && cfg[site].username && cfg[site].password) ? cfg[site] : null;
   if (cfg.autoMode === false) return { ok: false, reason: "disabled" };
-  if (!cfg.username || !cfg.password) return { ok: false, reason: "未配置账号密码" };
+  if (!cred) {
+    return { ok: false, reason: "未配置" + site + " 账号密码" };
+  }
 
   const now = Date.now();
-  const hash = simpleHash((cfg.username || "") + "|" + url);
+  const hash = simpleHash((cred.username || "") + "|" + url + "|" + site);
   const attempts = await chrome.storage.local.get(["lastAttemptAt", "lastAttemptHash"]);
   if (attempts.lastAttemptAt && attempts.lastAttemptHash === hash && now - attempts.lastAttemptAt < COOLDOWN_MS) {
     return { ok: false, reason: "cooldown" };
@@ -65,14 +76,14 @@ async function autoHandle(tabId, url) {
       await chrome.scripting.executeScript({
         target: { tabId },
         func: AUTO_LOGIN_MAIN,
-        args: [{ username: cfg.username, password: cfg.password }],
+        args: [{ username: cred.username, password: cred.password }],
         world: "MAIN",
       });
     } else if (isMailHost(new URL(url).hostname)) {
       await chrome.scripting.executeScript({
         target: { tabId },
         func: AUTO_LOGIN_MAIL,
-        args: [{ username: cfg.username, password: cfg.password }],
+        args: [{ username: cred.username, password: cred.password }],
         world: "MAIN",
       });
     } else if (isTsinghua(url)) {
@@ -95,7 +106,7 @@ function simpleHash(s) {
   return h + "";
 }
 
-// ================= 统一认证登录页 =================
+// ================= 统一认证登录页 (cas) =================
 function AUTO_LOGIN_MAIN({ username, password }) {
   function setNativeValue(el, value) {
     const proto =
@@ -318,7 +329,7 @@ function AUTO_LOGIN_MAIN({ username, password }) {
   }
 }
 
-// ================= 邮件系统 (Coremail) =================
+// ================= 邮件系统 (Coremail, mail 凭据) =================
 function AUTO_LOGIN_MAIL({ username, password }) {
   function setNativeValue(el, value) {
     const proto =
@@ -508,7 +519,7 @@ function AUTO_LOGIN_MAIL({ username, password }) {
   }
 }
 
-// ================= 通用: 点击跳转统一认证的登录入口 =================
+// ================= 通用: 点击跳转统一认证的登录入口 (cas 凭据) =================
 function AUTO_CLICK_CAS_ENTRY() {
   try {
     if (window.location.hostname === "id.tsinghua.edu.cn") return { ok: false, reason: "skip-self" };

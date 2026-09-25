@@ -7,7 +7,7 @@
     :root { --ts:#7b0f15; }
     * { box-sizing:border-box; margin:0; padding:0; }
     body {
-      width:320px; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+      width:340px; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
       font-size:14px; color:#222; background:#fafafa;
     }
     .header {
@@ -21,18 +21,29 @@
     .header h1 { font-size:15px; font-weight:600; }
     .header p { font-size:11px; opacity:.85; }
     .body { padding:16px; }
-    label { display:block; font-size:12px; color:#555; margin:10px 0 4px; }
+    .card {
+      border:1px solid #e3e0e0; border-radius:8px; padding:12px;
+      margin-bottom:12px; background:#fff;
+    }
+    .card h2 {
+      font-size:13px; color:var(--ts); margin-bottom:2px;
+      display:flex; align-items:center; gap:6px;
+    }
+    .card .sub { font-size:11px; color:#999; margin-bottom:10px; }
+    label { display:block; font-size:12px; color:#555; margin:8px 0 4px; }
     input[type="text"], input[type="password"] {
       width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:6px;
       font-size:14px; outline:none;
     }
     input:focus { border-color:var(--ts); }
     .btn {
-      width:100%; margin-top:14px; padding:9px; border:none; border-radius:6px;
+      width:100%; margin-top:12px; padding:9px; border:none; border-radius:6px;
       background:var(--ts); color:#fff; font-size:14px; cursor:pointer;
     }
     .btn:hover { opacity:.9; }
-    .btn.secondary { background:#eee; color:#333; margin-top:8px; }
+    .btn.secondary { background:#eee; color:#333; }
+    .row2 { display:flex; gap:8px; margin-top:12px; }
+    .row2 .btn { margin-top:0; }
     .status { margin-top:10px; font-size:12px; color:#666; min-height:16px; word-break:break-all; }
     .status.ok { color:#1a9446; }
     .status.err { color:#d33; }
@@ -52,8 +63,8 @@
     .switch input:checked + .slider::before { transform:translateX(20px); }
     .hint { font-size:11px; color:#999; margin-top:12px; line-height:1.6; }
     .hint a { color:var(--ts); }
-    .hint.sites { background:#fff; border:1px solid #eee; border-radius:6px; padding:8px 10px; margin-top:10px; }
-    .hint.sites div { margin-top:2px; }
+    .site-list { font-size:11px; color:#777; line-height:1.7; margin-top:4px; }
+    .site-list b { color:#333; font-weight:600; }
   </style>
 </head>
 <body>
@@ -61,15 +72,30 @@
     <div class="logo">清</div>
     <div>
       <h1>清华自动登录</h1>
-      <p>清华大学统一身份认证自动登录</p>
+      <p>统一认证 · 邮件 · 网络学堂 等自动登录</p>
     </div>
   </div>
-  <div class="body">
-    <label for="username">用户名（学号/工号）</label>
-    <input type="text" id="username" autocomplete="username" placeholder="学号、工作证号或账号" />
 
-    <label for="password">密码</label>
-    <input type="password" id="password" autocomplete="current-password" placeholder="密码" />
+  <div class="body">
+    <div class="card">
+      <h2>统一认证账号</h2>
+      <div class="sub">用于信息门户、网络学堂、图书馆、场馆预约等</div>
+      <label for="casUser">用户名（学号/工号）</label>
+      <input type="text" id="casUser" autocomplete="username" placeholder="学号、工作证号或账号" />
+
+      <label for="casPass">密码</label>
+      <input type="password" id="casPass" autocomplete="current-password" placeholder="密码" />
+    </div>
+
+    <div class="card">
+      <h2>邮件账号</h2>
+      <div class="sub">mail.tsinghua.edu.cn 邮箱，与统一认证账号相互独立</div>
+      <label for="mailUser">邮箱账号</label>
+      <input type="text" id="mailUser" autocomplete="username" placeholder="邮箱用户名（不含 @域 部分）" />
+
+      <label for="mailPass">邮箱密码</label>
+      <input type="password" id="mailPass" autocomplete="current-password" placeholder="密码" />
+    </div>
 
     <div class="switch-row">
       <span>自动登录</span>
@@ -79,18 +105,24 @@
       </label>
     </div>
 
-    <button class="btn" id="save">保存并启用</button>
-    <button class="btn secondary" id="clear">清除全部记录</button>
+    <button class="btn" id="save">保存全部</button>
+    <div class="row2">
+      <button class="btn secondary" id="clear">清除全部记录</button>
+      <button class="btn secondary" id="clearCas">清除认证</button>
+      <button class="btn secondary" id="clearMail">清除邮箱</button>
+    </div>
     <div class="status" id="status"></div>
-    <div class="hint sites">
-      支持自动登录的站点：
-      <div>· 统一认证 id.tsinghua.edu.cn</div>
-      <div>· 电子邮件 mail.tsinghua.edu.cn</div>
-      <div>· 网络学堂 learn.tsinghua.edu.cn</div>
-      <div>· 图书馆、场馆预约等跳转统一认证的系统</div>
+
+    <div class="hint">
+      支持的站点：
+      <div class="site-list">
+        <b>统一认证</b> id.tsinghua.edu.cn<br/>
+        <b>邮件</b> mail/mails.tsinghua.edu.cn 等<br/>
+        <b>其他</b> 网络学堂、图书馆、场馆预约等跳转统一认证的系统
+      </div>
     </div>
     <div class="hint">
-      密码仅保存在本机浏览器（chrome.storage.local），不会同步到云端。
+      密码仅保存在本机浏览器（chrome.storage.local），不会同步到云端。邮箱密码与统一认证密码相互独立，分开存储。
     </div>
   </div>
   <script src="popup.js"></script>
