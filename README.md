@@ -1,46 +1,87 @@
-# 清华自动登录 Chrome 插件
+# Tsinghua Auto-Login
 
-自动完成清华大学相关系统的登录，免去反复手动输入。支持：
+*Because you should not have to fight your own university's login page every single day.*
 
-- 统一身份认证 id.tsinghua.edu.cn
-- 电子邮件系统 mail.tsinghua.edu.cn（Coremail）
-- 网络学堂 learn.tsinghua.edu.cn（自动点击登录入口，跳统一认证后无感登录）
-- 图书馆、体育场馆预约等一切跳转统一认证的系统
+A Chrome extension that automatically signs you in to Tsinghua University's identity
+system, email, and the scattered web services that all insist on their own login
+flow. Born out of pure exasperation.
 
-## 功能
+> **Why does this exist?**
+>
+> Tsinghua University runs one of the world's most prestigious institutions of
+> higher learning, and also one of the most aggressively backwards pieces of
+> digital infrastructure ever shipped to students. The unified identity system
+> (`id.tsinghua.edu.cn`) asks you to re-enter your username and password for
+> services that should already share one session. The email system runs a
+> separate Coremail instance with its *own* credentials, because of course it
+> does. Web Learning (`learn.tsinghua.edu.cn`) has a login button that exists
+> only to bounce you to another login page. The library, sports-booking, and
+> half a dozen other systems each reinvent the wheel, then charge you a toll
+> to roll it.
+>
+> Nothing talks to anything else. Every login is slow, scattered, and manual.
+> In 2026, at China's flagship university. This extension is the author's
+> humble, angry protest, written in the only language the systems seem to
+> respect: automated clicking.
 
-- 统一认证登录页：自动填用户名密码，复用页面原生 `$.submitForm()`（SM2 加密、指纹采集、信任浏览器勾选由页面处理）
-- 邮件系统：自动填 Coremail 表单（`#uid`/`#password`），点原生 `.j-submit`，签名/加密交给页面
-- 通用入口：在任意 *.tsinghua.edu.cn 页面检测「跳转统一认证」的按钮/链接/表单，自动点击，接着由统一认证完成真正登录
-- 验证码：登录页/邮件页出现图形验证码时自动识别；识别失败自动刷新重试 3 次，仍失败则聚焦输入框提示手动输入
-- 60 秒防重复触发冷却，避免登录失败死循环
-- **凭据分站点独立存储**：统一认证（cas）与邮箱（mail）是两套账号密码，分开填写、分开存储，互不影响
-- 密码仅保存在本机 `chrome.storage.local`，不同步云端
+## What it fixes
 
-## 安装
+| System | How |
+|---|---|
+| Unified identity `id.tsinghua.edu.cn` | Fills the form, reuses the page's own `$.submitForm()` (SM2 encryption, fingerprinting, "trusted browser" checkbox all handled by the page, as they should be) |
+| Email `mail*.tsinghua.edu.cn` | Auto-fills the Coremail form (`#uid`/`#password`), clicks the native `.j-submit` — because yes, the mail account is separate from the unified account |
+| Web Learning, library, venue booking, etc. | Auto-clicks any login entry that redirects to the unified identity system, so the real login happens there silently |
 
-1. 下载本仓库代码（或 `git clone`）
-2. 打开 Chrome，访问 `chrome://extensions`
-3. 右上角打开「开发者模式」
-4. 点击「加载已解压的扩展程序」，选择本目录
-5. 点击扩展图标，填入用户名和密码，保存
+Captcha (when the systems decide to be extra annoying): auto-recognized;
+retried 3 times on failure; degrades gracefully to "please type it, human",
+with the input focused and highlighted. A 60-second cooldown prevents
+login-failure death loops.
 
-## 使用
+## Credentials
 
-- 访问任意需要清华统一认证的页面（info、网络学堂、图书馆等），跳转到登录页时自动登录
-- 打开 mail.tsinghua.edu.cn 时自动登录邮件系统
-- 若页面要求图形验证码：插件先尝试自动识别，失败后验证码框会高亮，手动输入后自动提交
-- 在扩展弹窗中可随时关闭自动登录或清除账号密码
+The unified identity account and the mail account are **separate credentials**,
+stored **independently** in `chrome.storage.local` — never synced to the cloud,
+never leaving your machine. Two independent sections in the popup, two
+independent clear buttons.
 
-## 技术说明
+## Install
 
-- `background.js`：监听 `tabs.onUpdated`，按域名分流到三个注入脚本：
-  - `AUTO_LOGIN_MAIN`：统一认证登录页（`world: "MAIN"`，可访问页面 jQuery）
-  - `AUTO_LOGIN_MAIL`：Coremail 邮件登录页
-  - `AUTO_CLICK_CAS_ENTRY`：通用统一认证入口点击器
-- 注入函数完全自包含（`executeScript` 只序列化 func 本身，不能引用闭包外部变量）
-- 验证码识别：彩色前景分割 + 列投影切字 + 多字体模板匹配，配合页面 `checkCaptcha` 校验自动重试
+1. Clone or download this repo.
+2. Open `chrome://extensions`, enable **Developer mode** (top-right).
+3. Click **Load unpacked**, select this directory.
+4. Click the extension icon, fill in your credentials (one or both sections), save.
 
-## 安全说明
+## Usage
 
-密码存储在浏览器本地存储，仅用于向清华各系统提交登录。请遵守清华网络使用规范，勿用于未授权自动化行为。
+- Visit any Tsinghua service that bounces you to unified login → automatic.
+- Open the mail system → automatic.
+- Captcha appears? Auto-solve first; if that fails, the field is highlighted,
+  type the 4 characters and it submits on its own.
+- Toggle or wipe credentials anytime from the popup.
+
+## How it works
+
+- `background.js` listens on `tabs.onUpdated` and routes by hostname to three
+  fully self-contained injected scripts (`world: "MAIN"` so they can touch the
+  page's own jQuery):
+  - `AUTO_LOGIN_MAIN` — unified identity login page
+  - `AUTO_LOGIN_MAIL` — Coremail login page
+  - `AUTO_CLICK_CAS_ENTRY` — generic clicker for unified-auth redirect entries
+- Captcha solving: color-saturation segmentation + column-projection character
+  splitting + multi-font template matching, verified through the page's own
+  `checkCaptcha` API with auto-retry.
+- Injected functions are deliberately self-contained because
+  `chrome.scripting.executeScript` serializes only the function body, not its
+  closure. Future maintainers, do not "refactor" this away.
+
+## A note on the future
+
+Tsinghua will eventually replace these systems. On that day, this repository
+will quietly retire, and its author will shed a single tear of relief. Until
+then: enjoy not typing your password into four different logins per day.
+
+---
+
+*Only log into accounts you are authorized to use. Obey Tsinghua's network
+policies. Logging in for yourself is not a crime; automating your own misery is
+a survival strategy.*
