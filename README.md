@@ -21,7 +21,7 @@ flow. Born out of pure exasperation.
 >
 > Nothing talks to anything else. Every login is slow, scattered, and manual.
 > In 2026, at China's flagship university. This extension is the author's
-> humble, angry protest, written in the only language the systems seem to
+> humble, quiet protest, written in the only language the systems seem to
 > respect: automated clicking.
 
 ## What it fixes
