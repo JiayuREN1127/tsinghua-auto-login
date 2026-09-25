@@ -52,6 +52,8 @@
     .switch input:checked + .slider::before { transform:translateX(20px); }
     .hint { font-size:11px; color:#999; margin-top:12px; line-height:1.6; }
     .hint a { color:var(--ts); }
+    .hint.sites { background:#fff; border:1px solid #eee; border-radius:6px; padding:8px 10px; margin-top:10px; }
+    .hint.sites div { margin-top:2px; }
   </style>
 </head>
 <body>
@@ -80,9 +82,15 @@
     <button class="btn" id="save">保存并启用</button>
     <button class="btn secondary" id="clear">清除全部记录</button>
     <div class="status" id="status"></div>
+    <div class="hint sites">
+      支持自动登录的站点：
+      <div>· 统一认证 id.tsinghua.edu.cn</div>
+      <div>· 电子邮件 mail.tsinghua.edu.cn</div>
+      <div>· 网络学堂 learn.tsinghua.edu.cn</div>
+      <div>· 图书馆、场馆预约等跳转统一认证的系统</div>
+    </div>
     <div class="hint">
       密码仅保存在本机浏览器（chrome.storage.local），不会同步到云端。
-      自动登录在访问 id.tsinghua.edu.cn 登录页时触发。
     </div>
   </div>
   <script src="popup.js"></script>

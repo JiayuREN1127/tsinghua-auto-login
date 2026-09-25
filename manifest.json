@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "清华自动登录",
   "version": "1.0.0",
-  "description": "自动完成清华大学统一身份认证（id.tsinghua.edu.cn）登录",
+  "description": "清华统一身份认证 + 邮件 + 网络学堂等站点的自动登录",
   "permissions": ["storage", "scripting", "tabs"],
   "host_permissions": ["*://id.tsinghua.edu.cn/*", "*://*.tsinghua.edu.cn/*"],
   "background": {
