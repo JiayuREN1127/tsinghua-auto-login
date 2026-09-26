@@ -120,17 +120,26 @@ function AUTO_LOGIN_MAIN({ username, password }) {
       el.dispatchEvent(new Event(type, { bubbles: true }));
     });
   }
+  // 兼容两种登录表单:
+  //  普通: #username/#password + $.submitForm()
+  //  网络学堂跳转: #i_user/#i_pass + 全局 doLogin() (内部做 SM2 + 提交)
   function doSubmitCas() {
+    const jumpForm = document.getElementById("theform");
+    if (typeof window.doLogin === "function" && jumpForm) {
+      window.doLogin();
+      return;
+    }
     if (window.$ && typeof window.$.submitForm === "function") {
       window.$.submitForm();
-    } else {
-      const btn = document.querySelector("form button[type='button']");
-      if (btn) btn.click();
-      else {
-        const form = document.getElementById("zhmi") || document.querySelector("form");
-        if (form) form.submit();
-      }
+      return;
     }
+    const btn = document.querySelector("form button[type='button']");
+    if (btn) {
+      btn.click();
+      return;
+    }
+    const form = document.getElementById("zhmi") || document.querySelector("form");
+    if (form) form.submit();
   }
   function highlight(el, text) {
     el.style.border = "2px solid #f44336";
@@ -264,8 +273,13 @@ function AUTO_LOGIN_MAIN({ username, password }) {
   }
 
   try {
-    const u = document.getElementById("username");
-    const p = document.getElementById("password");
+    // 兼容普通表单(#username/#password) 与网络学堂跳转表单(#i_user/#i_pass)
+    const u =
+      document.getElementById("username") ||
+      document.getElementById("i_user");
+    const p =
+      document.getElementById("password") ||
+      document.getElementById("i_pass");
     if (!u || !p) return { ok: false, reason: "表单未找到" };
 
     setNativeValue(u, username);
